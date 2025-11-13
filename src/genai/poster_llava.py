@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 from pathlib import Path
 from typing import Iterable
 
@@ -9,6 +10,10 @@ import pandas as pd
 from PIL import Image
 from tqdm import tqdm
 from transformers import AutoProcessor, LlavaForConditionalGeneration
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.append(str(PROJECT_ROOT))
 
 from config import ProjectConfig
 

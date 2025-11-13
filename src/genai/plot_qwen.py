@@ -3,11 +3,17 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sys
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.append(str(PROJECT_ROOT))
 
 from config import ProjectConfig
 

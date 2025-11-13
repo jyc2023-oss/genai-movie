@@ -121,9 +121,10 @@ def main() -> None:
         description="Phase 2 - traditional feature engineering pipeline."
     )
     parser.add_argument(
-        "--config",
+        "--sample-size",
+        type=int,
         default=None,
-        help="(Optional) path to a python module that exposes ProjectConfig as `config`.",
+        help="Number of samples to keep",
     )
     args = parser.parse_args()
 
@@ -131,9 +132,20 @@ def main() -> None:
     config.prepare()
 
     merged = load_and_merge(config)
+
+    # ⭐⭐ 添加采样功能 ⭐⭐
+    if args.sample_size is not None:
+        print(f"Sampling {args.sample_size} movies...")
+        merged = merged.sample(n=args.sample_size, random_state=42)
+        # 保存采样后的 CSV，后续 download_posters / Qwen 都用它
+        sampled_path = "artifacts/datasets/movies_sampled.csv"
+        merged.to_csv(sampled_path, index=False)
+        print(f"Sampled CSV saved to {sampled_path}")
+
     structured = engineer_structured_features(merged)
     structured.to_parquet(config.paths.structured_features_path, index=False)
     logger.info("Structured features saved to %s", config.paths.structured_features_path)
+
 
 
 if __name__ == "__main__":
