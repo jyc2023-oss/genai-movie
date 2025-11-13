@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import argparse
@@ -15,7 +16,6 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
 )
-
 
 BASE_URL = "https://image.tmdb.org/t/p"
 
@@ -36,11 +36,13 @@ def download_posters(
     for _, row in tqdm(df.iterrows(), total=len(df), desc="Downloading posters"):
         poster_path = row.get("poster_path")
         movie_id = row.get("id")
+
         if not poster_path or not isinstance(poster_path, str):
             continue
 
         url = build_image_url(poster_path, size=image_size)
         destination = output_dir / f"{movie_id}.jpg"
+
         if destination.exists():
             continue
 
@@ -48,7 +50,12 @@ def download_posters(
         if response.status_code == 200:
             destination.write_bytes(response.content)
         else:
-            logger.warning("Failed to download %s (%s) -> %s", movie_id, poster_path, response.status_code)
+            logger.warning(
+                "Failed to download %s (%s) -> %s",
+                movie_id,
+                poster_path,
+                response.status_code,
+            )
 
 
 def main() -> None:
@@ -63,7 +70,15 @@ def main() -> None:
     config = ProjectConfig()
     config.prepare()
 
-    movies = pd.read_csv(config.paths.raw_movies)
+    sampled_csv = Path("artifacts/datasets/movies_sampled.csv")
+
+    if sampled_csv.exists():
+        logger.info("Using sampled movies: %s", sampled_csv.resolve())
+        movies = pd.read_csv(sampled_csv)
+    else:
+        logger.warning("Sampled CSV not found. Falling back to full dataset.")
+        movies = pd.read_csv(config.paths.raw_movies)
+
     download_posters(movies, config.paths.posters_dir, image_size=args.image_size)
     logger.info("Posters available under %s", config.paths.posters_dir.resolve())
 
