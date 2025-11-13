@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import argparse
@@ -18,7 +19,6 @@ logging.basicConfig(
 
 
 def safe_json_loads(payload: str | float | int | None) -> list[dict[str, Any]]:
-    """Parse the TMDB stringified JSON columns."""
     if payload in (None, np.nan):
         return []
     if isinstance(payload, (list, tuple)):
@@ -48,7 +48,6 @@ def extract_director(crew_items: list[dict[str, Any]]) -> str | None:
 
 
 def load_and_merge(config: ProjectConfig) -> pd.DataFrame:
-    """Load the raw CSVs and return a merged DataFrame."""
     movies = pd.read_csv(config.paths.raw_movies)
     credits = pd.read_csv(config.paths.raw_credits)
     credits = credits.rename(columns={"movie_id": "id"})
@@ -58,10 +57,8 @@ def load_and_merge(config: ProjectConfig) -> pd.DataFrame:
 
 
 def engineer_structured_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Implement Phase 2 of the design doc."""
     working = df.copy()
 
-    # Basic numeric hygiene
     numeric_cols = ["budget", "revenue", "popularity", "runtime", "vote_count"]
     for col in numeric_cols:
         working[col] = (
@@ -74,12 +71,14 @@ def engineer_structured_features(df: pd.DataFrame) -> pd.DataFrame:
     working["budget_log"] = np.log1p(working["budget"])
     working["revenue_log"] = np.log1p(working["revenue"])
 
-    # Release date features
     working["release_date"] = pd.to_datetime(working["release_date"], errors="coerce")
-    working["release_year"] = working["release_date"].dt.year.fillna(working["release_date"].dt.year.median())
-    working["release_month"] = working["release_date"].dt.month.fillna(working["release_date"].dt.month.median())
+    working["release_year"] = working["release_date"].dt.year.fillna(
+        working["release_date"].dt.year.median()
+    )
+    working["release_month"] = working["release_date"].dt.month.fillna(
+        working["release_date"].dt.month.median()
+    )
 
-    # Parse JSON columns into python objects
     working["genres_parsed"] = working["genres"].apply(safe_json_loads)
     working["keywords_parsed"] = working["keywords"].apply(safe_json_loads)
     working["cast_parsed"] = working["cast"].apply(safe_json_loads)
@@ -90,8 +89,14 @@ def engineer_structured_features(df: pd.DataFrame) -> pd.DataFrame:
     working["top_actor"] = working["cast_parsed"].apply(get_top_name)
     working["director"] = working["crew_parsed"].apply(extract_director)
 
-    # Fill missing categorical values
-    categorical_cols = ["original_language", "status", "top_genre", "top_keyword", "top_actor", "director"]
+    categorical_cols = [
+        "original_language",
+        "status",
+        "top_genre",
+        "top_keyword",
+        "top_actor",
+        "director",
+    ]
     for col in categorical_cols:
         working[col] = working[col].fillna("unknown")
 
@@ -124,7 +129,7 @@ def main() -> None:
         "--sample-size",
         type=int,
         default=None,
-        help="Number of samples to keep",
+        help="Optional number of movies to sample.",
     )
     args = parser.parse_args()
 
@@ -133,19 +138,19 @@ def main() -> None:
 
     merged = load_and_merge(config)
 
-    # ⭐⭐ 添加采样功能 ⭐⭐
     if args.sample_size is not None:
-        print(f"Sampling {args.sample_size} movies...")
-        merged = merged.sample(n=args.sample_size, random_state=42)
-        # 保存采样后的 CSV，后续 download_posters / Qwen 都用它
-        sampled_path = "artifacts/datasets/movies_sampled.csv"
-        merged.to_csv(sampled_path, index=False)
-        print(f"Sampled CSV saved to {sampled_path}")
+        logger.info("Sampling %d movies...", args.sample_size)
+        sampled = merged.sample(n=args.sample_size, random_state=42)
+        sampled_path = config.paths.datasets_dir / "movies_sampled.csv"
+        sampled_path.parent.mkdir(parents=True, exist_ok=True)
+        sampled.to_csv(sampled_path, index=False)
+        logger.info("Sampled CSV saved to %s", sampled_path.resolve())
 
     structured = engineer_structured_features(merged)
     structured.to_parquet(config.paths.structured_features_path, index=False)
-    logger.info("Structured features saved to %s", config.paths.structured_features_path)
-
+    logger.info(
+        "Structured features saved to %s", config.paths.structured_features_path
+    )
 
 
 if __name__ == "__main__":
