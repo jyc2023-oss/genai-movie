@@ -1,0 +1,750 @@
+好的，这是一个非常明智的决定。使用Google 
+Colab
+是实现这个项目“0成本”和“高稳定性”的最佳路径。
+以下是一份以此为（零成本）技术核心的、
+极其详细
+的课程设计策划书。它几乎就是你未来几周的“施工图纸”，涵盖了从环境配置到最终报告的所有细节。
+《大模型与
+GenAI
+》课程设计策划书
+课题名称
+零成本实现： 基于Google 
+Colab
+、LMM与LLM的“感知”特征工程融合电影评分预测
+学生
+[你的名字]
+专业
+大数据管理与应用
+日期
+2025年11月12日
+一、 摘要 (Abstract)
+本项目旨在解决传统机器学习在电影评分预测任务上的核心痛点：即**“感知”信息（如艺术美学、叙事质量）的缺失**。传统模型仅依赖“结构化”数据（如预算、导演），其预测能力存在明显天花板。
+本设计将创新性地提出并实践一个“
+GenAI
+即特征工程师
+” (
+GenAI
+-as-a-Feature-Engineer) 的工作流。我们将
+100% 零成本
+地利用 
+Google 
+Colab
+ 免费T4 GPU（16GB显存）环境，部署4-bit量化的大型多模态模型（
+LLaVA-1.5-7B
+）和大型语言模型（
+Qwen1.5-7B-Chat
+）。
+具体而言，
+LLaVA
+将被用于“观看”电影海报，生成“
+美学风格
+”关键词；
+Qwen
+将被用于“阅读”情节摘要，生成“
+叙事新颖度
+”和“
+情感复杂度
+”的量化评分。最后，这些由
+GenAI
+“创造”的“感知特征”将与原始“结构化特征”相融合，共同喂给一个
+XGBoost
+模型进行最终预测。
+本项目的核心成果将是一个
+A/B对比实验
+，通过
+定量
+比较（RMSE指标）“Baseline模型”与“
+GenAI
+增强模型”的性能差异，来科学地证明
+GenAI
+在挖掘“感知”数据、赋能传统数据科学领域的巨大价值。
+二、 课题背景与业务描述
+1. 课题背景
+在电影工业中，对一部电影潜在口碑（如IMDb评分）的早期预测，对投资、制作、宣发策略的制定至关重要。
+2. 传统方法的局限
+你（大数据管理专业）所熟悉的传统数据科学方法，会使用
+budget
+、
+director
+、
+cast
+、
+genres
+等
+结构化
+数据来训练一个回归模型。这种方法的局限性在于：
+信息不全
+：它无法量化一个“天才”剧本或一张“惊艳”海报带来的情感冲击。
+同质化
+：“预算”和“导演”相似的电影，口碑可能天差地别。
+3. 业务描述（本项目的解决方案）
+本项目要解决的业务问题是：
+如何“量化”艺术，并将其注入机器学习模型？
+我们将构建一个
+自动化
+的“感知”特征提取流水线：
+输入
+：
+tmdb_5000_movies.csv
+ 和 5000张海报图片。
+处理
+：
+AI充当“艺术评论家” (LMM)
+：
+LLaVA
+ “观看”海报，输出
+"dark, gothic, suspense"
+等美学标签。
+AI充当“剧本医生” (LLM)
+：
+Qwen
+ “阅读”
+overview
+（情节），输出
+{"
+plot_novelty
+": 9.0}
+等叙事评分。
+你充当“数据科学家” (ML)
+：将AI生成的特征与原始表格数据融合。
+输出
+：一个
+A/B对比报告
+，用数据证明AI“感知”特征的
+有效性
+。
+三、 实验环境与技术
+栈
+（0成本核心）
+分类
+具体技术
+角色与目的（0成本）
+1. 
+算力平台
+Google 
+Colab
+ (免费版)
+【核心】
+ 提供免费的T4 GPU（约16GB VRAM），完美运行7B模型的4-bit量化版（约5GB）。
+2. 核心框架
+Python 3.10+, 
+Jupyter
+, Pandas, Scikit-learn
+数据处理、特征工程、模型融合的“胶水”。
+3. 
+GenAI
+模型
+llava
+-hf/llava-1.5-7b-hf
+ (LMM) 
+Qwen
+/Qwen1.5-7B-Chat
+ (LLM)
+均来自Hugging Face，开源免费。
+4. 加载技术
+transformers
+, 
+bitsandbytes
+, 
+accelerate
+transformers
+用于加载模型；
+bitsandbytes
+用于
+load_in_4bit=True
+（4-bit量化）；
+accelerate
+用于
+device_map
+="auto"
+（自动上GPU）。
+5. 融合模型
+XGBoost
+ / 
+LightGBM
+负责最终预测，开源免费，对CPU友好。
+6. 总计成本
+0元
+四、 数据来源与描述（100%可行）
+Kaggle - "
+TMDb
+ 5000 Movie Dataset"
+：
+tmdb_5000_movies.csv
+ (约4800行)
+[X1 - 结构化]
+ 
+budget
+, 
+genres
+, 
+popularity
+, 
+release_date
+, 
+runtime
+等。
+[X2 - 感知(文)]
+ 
+overview
+ (情节摘要，用于LLM输入)。
+[Key]
+ 
+id
+ (主键), 
+poster_path
+ (海报路径，用于爬虫)。
+[y - 目标]
+ 
+vote_average
+ (我们要预测的评分)。
+tmdb_5000_credits.csv
+[X1 - 结构化]
+ 
+director
+, 
+cast
+ (演员表)。需通过
+movie_id
+与上表合并。
+TMDb
+ API - 电影海报
+：
+[X3 - 感知(图)]
+ 约5000张
+.jpg
+海报图片。
+获取方式
+：
+100% 0成本
+。在
+themoviedb.org
+注册免费API Key。利用
+poster_path
+列和
+https://image.tmdb.org/t/p/w500/
+的基
+地址，
+编写Python脚本（使用
+requests
+库）
+，批量下载所有海报到
+Colab
+的临时存储或Google Drive。
+五、 所用模型理论详述
+本项目是一个**“调用”而非“训练”**大模型的典范，核心是模型的“组合”。
+LLaVA-1.5-7B (海报分析师)
+理论
+：一个强大的开源LMM。它通过一个“连接器”将一个“视觉编码器”（看图的眼睛，如CLIP）和一个“大语言模型”（思考的大脑，如Vicuna）连接起来。
+作用
+：我们
+不
+需要它识别海报上“有几个人”，我们需要它
+推理
+海报的“
+艺术风格
+”。我们将通过Prompt Engineering，强迫它输出“美学关键词”。
+加载
+：在
+Colab
+中，我们将使用
+load_in_4bit=True
+加载，显存占用约5GB，T4 GPU（16GB）绰绰有余。
+Qwen1.5-7B-Chat (剧本分析师)
+理论
+：阿里开源的SOTA（业界顶尖）语言模型，其中英文能力俱佳，且对“指令跟随”和“JSON格式输出”有SOTA级的支持。
+作用
+：我们将利用它的**“指令跟随”
+能力。我们将扮演“老板”，给它一个“剧本医生”的
+system_prompt
+，命令它在阅读
+overview
+后，必须以
+严格的JSON格式**返回“情节新颖度”和“情感复杂度”的
+1-10
+分。
+加载
+：同上，4-bit量化加载。
+TF-IDF Vectorizer (美学编码器)
+理论
+：经典的文本特征提取技术。
+作用
+：
+LLaVA
+输出的是“
+dark, gothic
+”等文本，
+XGBoost
+不认识。TF-IDF负责将这些“美学关键词”转换为
+XGBoost
+可以理解的“数字向量”。
+XGBoost
+ (最终
+预测器
+)
+理论
+：梯度提升决策树算法。
+作用
+：它
+极其擅长
+处理我们最终生成的
+异构表格数据
+（即：融合了[数值]、[类别]、[
+GenAI
+评分]、[TF-IDF向量]的“超级特征表”），并给出最终的
+vote_average
+预测。
+六、 实验思路与详细步骤（“施工图纸”）
+Phase 0: 环境与数据准备 (约2-3小时)
+环境
+：打开 
+colab.research.google.com
+。
+[关键]
+：点击
+Runtime
+ -> 
+Change runtime type
+ -> 
+T4 GPU
+。
+安装
+：运行 
+!pip install transformers 
+bitsandbytes
+ accelerate pandas scikit-learn 
+xgboost
+ tmdbv3api
+。
+上传
+：将
+tmdb_5000_movies.csv
+和
+credits.csv
+上传到
+Colab
+。
+[你动手]
+：
+编写海报下载脚本
+。
+在
+TMDb
+官网注册
+，获取免费API Key。
+import pandas as pd
+, 
+import requests
+, 
+import 
+os
+df = 
+pd.read
+_csv
+("tmdb_5000_movies.csv")
+os.makedirs
+("posters")
+for index, row in 
+df.iterrows
+():
+url
+ = 
+f"https
+://image.tmdb.org/t/p/w500/{row['
+poster_path
+']}"
+response = 
+requests.get
+(
+url
+)
+with open(
+f"posters
+/{row['id']}.jpg", "
+wb
+") as f: 
+f.write
+(
+response.content
+)
+(注意：
+Colab
+临时存储会断线即
+焚
+，
+推荐
+：
+from 
+google.colab
+ import drive; 
+drive.mount
+('/
+gdrive
+')
+，将海报下载到你的Google Drive，一劳永逸)。
+Phase 1: 
+GenAI
+ 特征工程 (
+最
+核心的创新点, 约需3-5小时运行)
+[你动手]
+：
+加载
+LLaVA
+ (使用
+transformers
+, 
+load_in_4bit=True
+, 
+device_map
+="auto"
+).
+[你动手]
+：
+设计海报Prompt (P1)
+P1 = "你是一位顶级的电影海报分析师。请用5个最准确的英文关键词描述这张海报的视觉风格、类型和情感基调。"
+[你动手]
+：
+编写LMM循环
+poster_features
+ = []
+for 
+movie_id
+ in df['id']:
+image = 
+Image.open
+(
+f"posters
+/{
+movie_id
+}.jpg")
+response = 
+llava_
+model.generate
+(image, P1)
+poster_
+features.append
+({"id": 
+movie_id
+, "keywords": response})
+pd.DataFrame
+(
+poster_features
+).
+to_csv
+("poster_features.csv")
+[关键]
+：
+释放显存
+。
+del 
+llava_model
+, 
+import torch; 
+torch.cuda.empty_cache
+()
+。
+[你动手]
+：
+加载
+Qwen
+ (同上，4-bit加载).
+[你动手]
+：
+设计情节Prompt (P2)
+P2_system = "你是一位资深剧本医生。你的任务是阅读情节摘要，并以严格的JSON格式返回你对‘情节新颖
+度’(
+plot_novelty
+)和‘情感复杂度’(
+emotion_complexity
+)的1-10分评分。"
+P2_user = f"情节摘要：{
+overview_text
+} \n\n JSON评分："
+[你动手]
+：
+编写LLM循环
+plot_features
+ = []
+for index, row in 
+df.iterrows
+():
+response = 
+qwen_
+model.generate
+(P2_system, P2_user.format(
+overview_text
+=row['overview']))
+# (此处需要写JSON解析和try-except
+防报错
+代码)
+json_data
+ = 
+parse_json
+(response)
+plot_
+features.append
+({"id": row['id'], **
+json_data
+})
+pd.DataFrame
+(
+plot_features
+).
+to_csv
+("plot_features.csv")
+Phase 2: 传统特征工程 (你的专业本行)
+[你动手]
+：使用
+pandas
+，将
+movies.csv
+和
+credits.csv
+通过
+id
+合并。
+[你动手]
+：清洗数据。处理
+budget=0
+的缺失值（如用
+genres
+的中位数填充），从
+release_date
+提取
+year
+、
+month
+，从
+genres
+、
+cast
+、
+director
+中提取关键信息（如
+One-Hot
+或
+Target Encoding
+）。
+Phase 3: 特征融合
+[你动手]
+：加载 
+poster_features.csv
+。使用
+TfidfVectorizer
+将其
+keywords
+列转换为
+N x 500
+（举例）的稀疏矩阵。
+[你动手]
+：加载 
+plot_features.csv
+。
+[你动手]
+：
+终极拼接 (Merge)
+。将(Phase 2的表) + (TF-IDF矩阵) + (Phase 1的
+plot_features
+表) 水平拼接成一个
+最终的“超级特征表” (
+X_super
+)
+。
+y = df['
+vote_average
+']
+。
+Phase 4: A/B 对比实验 (写报告的核心)
+[你动手]
+：
+from 
+sklearn.model_selection
+ import 
+train_test_split
+，切分训练集和测试集。
+[你动手]
+：
+A. Baseline模型
+X_baseline
+ = (仅来自Phase 2的特征)
+model_A
+ = 
+xgboost.XGBRegressor
+().fit(
+X_train_A
+, 
+y_train
+)
+y_pred_A
+ = 
+model_
+A.predict
+(
+X_test_A
+)
+RMSE_A = 
+mean_squared_
+error
+(
+y_test
+, 
+y_pred_A
+, squared=False)
+[你动手]
+：
+B. 
+GenAI
+增强模型
+X_genai
+ = (来自Phase 3的"超级特征表")
+model_B
+ = 
+xgboost.XGBRegressor
+().fit(
+X_train_B
+, 
+y_train
+)
+y_pred_B
+ = 
+model_
+B.predict
+(
+X_test_B
+)
+RMSE_B = 
+mean_squared_
+error
+(
+y_test
+, 
+y_pred_B
+, squared=False)
+[你动手]
+：
+分析
+。
+print(
+f"Baseline
+ RMSE: {RMSE_A}")
+, 
+print(
+f"GenAI
+ RMSE: {RMSE_B}")
+。
+七、 预期成果与测试方式（如何给老师看）
+你
+不需要
+给老师一个“实时运行”的Demo。你需要的是一份**“科学实验报告”**，用数据证明你的
+GenAI
+方法有效。
+定量测试 (A/B实验对比图)
+：
+你给老师看
+：一张柱状图，对比
+RMSE_A
+（例如0.85）和
+RMSE_B
+（例如0.79）。
+你证明了
+：
+RMSE_B < RMSE_A
+，即“注入”了
+GenAI
+特征后，模型的
+预测误差显著降低
+了。
+定性展示 (
+GenAI
+“作品”截图)
+：
+你给老师看
+：
+[截图A]：《黑暗骑士》的海报 -> 
+LLaVA
+输出：
+"
+dark
+, chaos, gothic, suspense"
+[截图B]：《盗梦空间》的情节 -> 
+Qwen
+输出：
+{"
+plot_novelty
+": 9.5, "
+emotion_complexity
+": 8.5}
+你证明了
+：你的
+GenAI
+模型
+真的“懂”艺术
+，而不是在瞎猜。
+洞察分析 (特征重要性图)
+：
+你给老师看
+：
+model_B
+ (
+GenAI
+版
+XGBoost
+) 的特征重要性排序图。
+你证明了
+：你“创造”的
+plot_novelty
+特征，其重要性排名
+高于
+budget
+等传统特征，证明了
+GenAI
+挖掘的“叙事”维
+度具有
+极高的预测价值
+。
+八、 可行性与创新点
+创新点
+：
+范式创新
+：提出“
+GenAI
+即特征工程师
+” (
+GenAI
+-as-a-Feature-Engineer) 的应用范式。
+技术融合
+：
+0成本
+复现了工业界前沿的“多模态融合”（LMM视觉 + LLM叙事 + ML表格）技术。
+问题切入
+：解决了传统数据科学中“感知”信息（美学、艺术）难以量化的痛点。
+可行性分析
+：
+成本可行性 (100%)
+：本项目所有数据、模型、
+算力
+均为
+0元
+，学生个人可完全实现。
+算力可行性
+ (100%)
+：Google 
+Colab
+的T4 GPU（16GB VRAM）
+远大于
+ 7B 4-bit模型所需的（约5GB）显存，运行稳定且高效。
+时间可行性 (高)
+：Phase 1的“
+GenAI
+特征工程”是唯一的耗时点（预计1-3小时的“挂机”运行时间），
+对于课设
+项目完全可以接受。Phase 3/4的
+XGBoost
+训练在5000行数据上
+仅需几秒钟
+。
+专业匹配度 (极高)
+：本项目完美结合了你的（大数据管理）专业技能和本课程（
+GenAI
+）的核心知识。
